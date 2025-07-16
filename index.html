@@ -14,135 +14,466 @@
 
   <script type="text/babel">
 
-    const glossary = [
-      {
-        original: "Architecture",
-        modified: "Architec",
-        pronunciation: "/ˈɑːr.kɪ.tek/",
-        category: "Technology",
-        definition: "The fundamental organizational structure of systems, processes, or enterprises.",
-        etymology: "Classical truncation maintaining technical authority.",
-        usageContext: ["IT strategy", "System design"],
-        examples: ["Our cloud architec enables unprecedented scalability."],
-        relatedTerms: ["Structuri", "Framewor", "Designi"],
-        difficultyLevel: "Intermediate",
-        industry: ["Tech", "Consulting"],
-        tags: ["IT", "Infrastructure"]
-      },
-      {
-        original: "Business Development Option",
-        modified: "BizDevOpsi",
-        pronunciation: "/ˈbɪz.dɛv.ɑːp.si/",
-        category: "Strategic Consulting",
-        definition: "Contingent growth initiative often evaluated for expansion feasibility.",
-        etymology: "Hybrid abbreviation aligning with growth operations.",
-        usageContext: ["Growth planning", "M&A"],
-        examples: ["Let's align the proposal with our core bizdevopsi thesis."],
-        relatedTerms: ["Scalevent", "MarketiStrat"],
-        difficultyLevel: "Advanced",
-        industry: ["Finance", "Consulting"],
-        tags: ["BDO", "Growth", "Strategy"]
-      },
-      {
-        original: "Rucksack",
-        modified: "Rukki",
-        pronunciation: "/ˈrʌk.i/",
-        category: "Agile/Methodology",
-        definition: "All carried initiatives, tasks, and pending items in project flow.",
-        etymology: "Consulting metaphor for 'carrying work on your back'.",
-        usageContext: ["Sprint planning", "Delivery tracking"],
-        examples: ["What's in your rukki for this quarter?"],
-        relatedTerms: ["Backloggi", "Taskloadi"],
-        difficultyLevel: "Basic",
-        industry: ["Tech", "Agile"],
-        tags: ["Scrum", "Planning"]
-      },
-      {
-        original: "Benchmark",
-        modified: "Benchma",
-        pronunciation: "/ˈbentʃ.mɑː/",
-        category: "Strategy",
-        definition: "Standard reference point for measuring comparative performance.",
-        etymology: "Compressed compound with performance authority.",
-        usageContext: ["KPI setting", "Performance reviews"],
-        examples: ["We need to benchma against industry leaders quarterly."],
-        relatedTerms: ["Compari", "Standardi"],
-        difficultyLevel: "Intermediate",
-        industry: ["All"],
-        tags: ["Metrics", "Performance"]
-      },
-      {
-        original: "Bandwidth",
-        modified: "Bandwi",
-        pronunciation: "/ˈbænd.wi/",
-        category: "Operations",
-        definition: "Available capacity for additional tasks or mental load.",
-        etymology: "Derived from tech term, simplified.",
-        usageContext: ["Workload discussions"],
-        examples: ["Do you have bandwi for this initiative?"],
-        relatedTerms: ["Capaci", "Availabi"],
-        difficultyLevel: "Basic",
-        industry: ["Tech", "Consulting"],
-        tags: ["Resources", "Planning"]
-      }
-    ];
+    // --- Utility Functions ---
+    function debounce(fn, delay) {
+      let timer;
+      return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+      };
+    }
+    function saveToStorage(key, value) {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+    }
+    function loadFromStorage(key, fallback) {
+      try {
+        const v = localStorage.getItem(key);
+        return v ? JSON.parse(v) : fallback;
+      } catch { return fallback; }
+    }
+    function getTodayKey() {
+      const d = new Date();
+      return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+    }
 
-    function GlossaryCard({ term }) {
-      const [expanded, setExpanded] = React.useState(false);
+    // --- Header Component ---
+    function Header({ query, setQuery, darkMode, setDarkMode, onDaily, onExport, onQuiz, onShowAnalytics }) {
+      // Highlighted search suggestions
+      const suggestions = [
+        "Kopf", "Kopfi", "Laptop", "Lappi", "Rucksack", "Rukki", "Flexibel", "Flexi", "Hähnchen", "Hühnchen"
+      ];
       return (
-        <div className="bg-white rounded-xl shadow p-4 mb-4">
-          <div className="flex justify-between items-center cursor-pointer" onClick={() => setExpanded(!expanded)}>
-            <h2 className="text-xl font-semibold text-blue-700">{term.modified}</h2>
-            <span className="text-sm text-gray-500">{term.original}</span>
+        <header className="sticky top-0 z-20 bg-white/90 dark:bg-gray-900/90 shadow-sm py-4 px-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl md:text-4xl font-bold text-blue-800 dark:text-blue-300 tracking-tight">📘 CorpSpeak Pro</span>
+            <span className="ml-2 px-2 py-1 rounded bg-blue-100 dark:bg-blue-900 text-xs text-blue-700 dark:text-blue-200 font-semibold">Enterprise Duden</span>
+          </div>
+          <div className="flex-1 flex flex-col items-center gap-1 max-w-xl mx-auto">
+            <input
+              type="text"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder={`Search terms, definitions, or try: ${suggestions.slice(0, 5).join(', ')}...`}
+              className="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              aria-label="Search glossary"
+            />
+            <div className="flex flex-wrap gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <span>Try:</span>
+              {suggestions.map(s => (
+                <button
+                  key={s}
+                  className="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-800 transition"
+                  onClick={() => setQuery(s)}
+                  type="button"
+                >{s}</button>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-2 items-center">
+            <button title="Term of the Day" onClick={onDaily} className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 transition" aria-label="Term of the Day">🌟</button>
+            <button title="Analytics" onClick={onShowAnalytics} className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 transition" aria-label="Analytics">📊</button>
+            <button title="Quiz Mode" onClick={onQuiz} className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 transition" aria-label="Quiz Mode">📝</button>
+            <button title="Export/Print" onClick={onExport} className="p-2 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 transition" aria-label="Export/Print">🖨️</button>
+            <button
+              className="ml-2 flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition"
+              onClick={() => setDarkMode(d => { saveToStorage('darkMode', !d); return !d; })}
+              aria-label="Toggle dark mode"
+            >
+              <span>{darkMode ? '🌙' : '☀️'}</span>
+              <span className="hidden md:inline text-xs">{darkMode ? 'Dark' : 'Light'} Mode</span>
+            </button>
+          </div>
+        </header>
+      );
+    }
+
+    // --- Sidebar Component ---
+    function Sidebar({ categories, selectedCategory, setSelectedCategory, azJump, setAzJump }) {
+      return (
+        <aside className="w-full md:w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4 rounded-xl shadow-sm mb-6 md:mb-0 md:mr-6">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-blue-700 dark:text-blue-300 mb-2">Categories</h2>
+            <ul className="space-y-1">
+              <li>
+                <button className={`w-full text-left px-2 py-1 rounded ${!selectedCategory ? 'bg-blue-100 dark:bg-blue-800 font-bold' : ''}`} onClick={() => setSelectedCategory(null)}>All</button>
+              </li>
+              {categories.map(cat => (
+                <li key={cat}>
+                  <button className={`w-full text-left px-2 py-1 rounded ${selectedCategory === cat ? 'bg-blue-100 dark:bg-blue-800 font-bold' : ''}`} onClick={() => setSelectedCategory(cat)}>{cat}</button>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-blue-700 dark:text-blue-300 mb-2">A-Z</h2>
+            <div className="flex flex-wrap gap-1">
+              {Array.from({length: 26}, (_, i) => String.fromCharCode(65 + i)).map(letter => (
+                <button
+                  key={letter}
+                  className={`w-7 h-7 rounded text-xs font-mono ${azJump === letter ? 'bg-blue-200 dark:bg-blue-700 font-bold' : 'bg-gray-100 dark:bg-gray-800'}`}
+                  onClick={() => setAzJump(azJump === letter ? null : letter)}
+                >{letter}</button>
+              ))}
+            </div>
+          </div>
+        </aside>
+      );
+    }
+
+    // --- Glossary Card Tabs ---
+    function CardTabs({ activeTab, setActiveTab }) {
+      const tabs = ["Definition", "Etymology", "Usage", "Related", "Meta"];
+      return (
+        <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700 mb-2">
+          {tabs.map(tab => (
+            <button
+              key={tab}
+              className={`px-3 py-1 rounded-t text-sm font-semibold ${activeTab === tab ? 'bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 border-b-2 border-blue-500' : 'text-gray-600 dark:text-gray-300'}`}
+              onClick={() => setActiveTab(tab)}
+            >{tab}</button>
+          ))}
+        </div>
+      );
+    }
+
+    // --- Glossary Card (Duden-style) ---
+    function GlossaryCard({ term, onCopy }) {
+      const [expanded, setExpanded] = React.useState(false);
+      const [activeTab, setActiveTab] = React.useState("Definition");
+      return (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6 border border-gray-200 dark:border-gray-700 transition-all group">
+          <div className="flex justify-between items-center cursor-pointer" onClick={() => setExpanded(e => !e)}>
+            <div>
+              <h2 className="text-2xl font-bold text-blue-800 dark:text-blue-200 tracking-tight group-hover:underline">{term.modified}</h2>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{term.original}</span>
+            </div>
+            <span className="text-xs px-2 py-1 rounded bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-200 font-semibold ml-2">{term.category}</span>
           </div>
           {expanded && (
-            <div className="mt-3 space-y-1 text-sm">
-              <p><strong>Pronunciation:</strong> {term.pronunciation}</p>
-              <p><strong>Definition:</strong> {term.definition}</p>
-              <p><strong>Etymology:</strong> {term.etymology}</p>
-              <p><strong>Category:</strong> {term.category} | <strong>Level:</strong> {term.difficultyLevel}</p>
-              <p><strong>Usage:</strong> {term.usageContext.join(', ')}</p>
-              <p><strong>Example:</strong> <em>"{term.examples[0]}"</em></p>
-              <p><strong>Related:</strong> {term.relatedTerms.map(rt => <span key={rt} className="inline-block mr-1 bg-gray-200 px-2 py-0.5 rounded">{rt}</span>)}</p>
-              <p><strong>Tags:</strong> {term.tags.join(', ')}</p>
+            <div className="mt-4">
+              <CardTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+              {activeTab === "Definition" && (
+                <div className="text-gray-800 dark:text-gray-100">
+                  <p className="mb-2"><strong>Pronunciation:</strong> <span className="font-mono">{term.pronunciation}</span></p>
+                  <p className="mb-2"><strong>Definition:</strong> {term.definition}</p>
+                </div>
+              )}
+              {activeTab === "Etymology" && (
+                <div className="text-gray-700 dark:text-gray-200">
+                  <p><strong>Etymology:</strong> {term.etymology}</p>
+                </div>
+              )}
+              {activeTab === "Usage" && (
+                <div className="text-gray-700 dark:text-gray-200">
+                  <p><strong>Usage Context:</strong> {term.usageContext.join(', ')}</p>
+                  <ul className="list-disc ml-6 mt-2">
+                    {term.examples.map((ex, i) => <li key={i} className="mb-1"><em>"{ex}"</em></li>)}
+                  </ul>
+                </div>
+              )}
+              {activeTab === "Related" && (
+                <div className="text-gray-700 dark:text-gray-200 flex flex-wrap gap-2">
+                  {term.relatedTerms.map(rt => <span key={rt} className="inline-block bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded">{rt}</span>)}
+                </div>
+              )}
+              {activeTab === "Meta" && (
+                <div className="text-gray-700 dark:text-gray-200">
+                  <p><strong>Level:</strong> {term.difficultyLevel}</p>
+                  <p><strong>Industry:</strong> {term.industry.join(', ')}</p>
+                  <p><strong>Tags:</strong> {term.tags.join(', ')}</p>
+                </div>
+              )}
+              <div className="mt-4 flex gap-2">
+                <button className="px-3 py-1 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 text-xs font-semibold hover:bg-blue-200 dark:hover:bg-blue-800" onClick={onCopy} title="Copy original term">Copy</button>
+              </div>
             </div>
           )}
         </div>
       );
     }
 
+    // --- Analytics Modal ---
+    function AnalyticsModal({ analytics, onClose }) {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 max-w-lg w-full relative">
+            <button className="absolute top-2 right-2 text-2xl" onClick={onClose}>&times;</button>
+            <h2 className="text-2xl font-bold mb-4 text-blue-800 dark:text-blue-200">Usage Analytics</h2>
+            <ul className="mb-4">
+              <li><strong>Most Searched:</strong> {analytics.mostSearched || '-'}</li>
+              <li><strong>Trending Term:</strong> {analytics.trending || '-'}</li>
+              <li><strong>Terms Viewed:</strong> {analytics.viewedCount}</li>
+              <li><strong>Favorites:</strong> {analytics.favoritesCount}</li>
+            </ul>
+            <p className="text-xs text-gray-500">Analytics are stored locally and private to you.</p>
+          </div>
+        </div>
+      );
+    }
+
+    // --- Quiz Modal ---
+    function QuizModal({ terms, onClose }) {
+      const [step, setStep] = React.useState(0);
+      const [score, setScore] = React.useState(0);
+      const [answers, setAnswers] = React.useState([]);
+      const qTerms = React.useMemo(() => terms.sort(() => 0.5 - Math.random()).slice(0, 5), [terms]);
+      if (step >= qTerms.length) {
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 max-w-lg w-full relative">
+              <button className="absolute top-2 right-2 text-2xl" onClick={onClose}>&times;</button>
+              <h2 className="text-2xl font-bold mb-4 text-blue-800 dark:text-blue-200">Quiz Complete!</h2>
+              <p className="mb-4">Your score: <span className="font-bold">{score} / {qTerms.length}</span></p>
+              <button className="px-4 py-2 rounded bg-blue-600 text-white font-semibold" onClick={onClose}>Close</button>
+            </div>
+          </div>
+        );
+      }
+      const current = qTerms[step];
+      const options = React.useMemo(() => {
+        const opts = [current.definition];
+        while (opts.length < 4) {
+          const d = terms[Math.floor(Math.random() * terms.length)].definition;
+          if (!opts.includes(d)) opts.push(d);
+        }
+        return opts.sort(() => 0.5 - Math.random());
+      }, [current, terms]);
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 max-w-lg w-full relative">
+            <button className="absolute top-2 right-2 text-2xl" onClick={onClose}>&times;</button>
+            <h2 className="text-xl font-bold mb-4 text-blue-800 dark:text-blue-200">Quiz: What does "{current.modified}" mean?</h2>
+            <div className="space-y-2 mb-4">
+              {options.map(opt => (
+                <button key={opt} className="block w-full text-left px-4 py-2 rounded bg-gray-100 dark:bg-gray-800 hover:bg-blue-100 dark:hover:bg-blue-800" onClick={() => {
+                  setAnswers([...answers, opt]);
+                  if (opt === current.definition) setScore(score + 1);
+                  setStep(step + 1);
+                }}>{opt}</button>
+              ))}
+            </div>
+            <div className="text-xs text-gray-500">Question {step + 1} of {qTerms.length}</div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- Export/Print Modal ---
+    function ExportModal({ terms, onClose }) {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 print:bg-transparent">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 max-w-2xl w-full relative print:shadow-none print:p-2">
+            <button className="absolute top-2 right-2 text-2xl print:hidden" onClick={onClose}>&times;</button>
+            <h2 className="text-2xl font-bold mb-4 text-blue-800 dark:text-blue-200 print:hidden">Export/Print Terms</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {terms.map((term, i) => (
+                <div key={i} className="border-b border-gray-200 dark:border-gray-700 pb-2 mb-2">
+                  <div className="font-bold text-blue-800 dark:text-blue-200">{term.modified} <span className="text-xs text-gray-500">({term.original})</span></div>
+                  <div className="text-xs text-gray-700 dark:text-gray-300">{term.definition}</div>
+                </div>
+              ))}
+            </div>
+            <button className="mt-4 px-4 py-2 rounded bg-blue-600 text-white font-semibold print:hidden" onClick={() => window.print()}>Print</button>
+          </div>
+        </div>
+      );
+    }
+
+    // --- Main App Component ---
     function App() {
       const [query, setQuery] = React.useState("");
+      const [glossary, setGlossary] = React.useState([]);
+      const [loading, setLoading] = React.useState(true);
+      const [error, setError] = React.useState(null);
+      const [selectedCategory, setSelectedCategory] = React.useState(null);
+      const [azJump, setAzJump] = React.useState(null);
+      // 1. Fix dark/light mode: default to white, ensure toggling works reliably
+      // 2. Remove Random term and Favorites/bookmarks buttons and logic
+      // 3. Improve Quiz mode: after quiz, show summary modal with score and button to return
+      // 4. Remove filter logic for highlighted words
+      const [darkMode, setDarkMode] = React.useState(() => loadFromStorage('darkMode', false));
+      const [recent, setRecent] = React.useState(() => loadFromStorage('recent', []));
+      const [showExport, setShowExport] = React.useState(false);
+      const [showQuiz, setShowQuiz] = React.useState(false);
+      const [showAnalytics, setShowAnalytics] = React.useState(false);
+      const [analytics, setAnalytics] = React.useState(() => loadFromStorage('analytics', {searches: {}, viewed: {}, favorites: {}}));
+      const [exportTerms, setExportTerms] = React.useState([]);
+      const [dailyTerm, setDailyTerm] = React.useState(null);
 
+      React.useEffect(() => {
+        document.documentElement.classList.toggle('dark', darkMode);
+        saveToStorage('darkMode', darkMode);
+      }, [darkMode]);
+
+      React.useEffect(() => {
+        fetch('glossary.json')
+          .then(res => {
+            if (!res.ok) throw new Error('Failed to load glossary data');
+            return res.json();
+          })
+          .then(data => {
+            setGlossary(data);
+            setLoading(false);
+            // Daily term
+            const todayKey = getTodayKey();
+            let dt = loadFromStorage('dailyTerm', {});
+            if (!dt[todayKey]) {
+              dt[todayKey] = data[Math.floor(Math.random() * data.length)];
+              saveToStorage('dailyTerm', dt);
+            }
+            setDailyTerm(dt[todayKey]);
+          })
+          .catch(err => {
+            setError(err.message);
+            setLoading(false);
+          });
+      }, []);
+
+      // --- Category and A-Z extraction ---
+      const categories = React.useMemo(() => {
+        const cats = new Set();
+        glossary.forEach(t => t.category && cats.add(t.category));
+        return Array.from(cats).sort();
+      }, [glossary]);
+
+      // --- Filtering logic ---
       const filteredTerms = React.useMemo(() => {
-        return glossary.filter(t =>
-          t.original.toLowerCase().includes(query.toLowerCase()) ||
-          t.modified.toLowerCase().includes(query.toLowerCase()) ||
-          t.definition.toLowerCase().includes(query.toLowerCase())
-        );
+        let terms = glossary;
+        if (selectedCategory) terms = terms.filter(t => t.category === selectedCategory);
+        if (azJump) terms = terms.filter(t => t.modified[0].toUpperCase() === azJump);
+        if (query.trim()) {
+          const q = query.toLowerCase();
+          terms = terms.filter(t =>
+            t.original.toLowerCase().includes(q) ||
+            t.modified.toLowerCase().includes(q) ||
+            t.definition.toLowerCase().includes(q) ||
+            (t.tags && t.tags.some(tag => tag.toLowerCase().includes(q)))
+          );
+        }
+        return terms;
+      }, [glossary, selectedCategory, azJump, query]);
+
+      // --- Analytics update ---
+      React.useEffect(() => {
+        if (query.trim()) {
+          setAnalytics(a => {
+            const s = {...a};
+            s.searches[query] = (s.searches[query] || 0) + 1;
+            saveToStorage('analytics', s);
+            return s;
+          });
+        }
       }, [query]);
 
+      // --- Helper: Add to recent ---
+      function addRecent(term) {
+        setRecent(r => {
+          const updated = [term, ...r.filter(t => t.modified !== term.modified)].slice(0, 10);
+          saveToStorage('recent', updated);
+          return updated;
+        });
+      }
+
+      // --- Helper: Copy term ---
+      function copyTerm(term) {
+        navigator.clipboard.writeText(term.original);
+        addRecent(term);
+        setAnalytics(a => {
+          const s = {...a};
+          s.viewed[term.modified] = (s.viewed[term.modified] || 0) + 1;
+          saveToStorage('analytics', s);
+          return s;
+        });
+      }
+
+      // --- Helper: Show daily term ---
+      function showDailyTerm() {
+        if (dailyTerm) {
+          // No random term modal, just show the card
+          // The GlossaryCard component handles its own display
+        }
+      }
+
+      // --- Helper: Show analytics ---
+      function showAnalyticsModal() {
+        // Calculate most searched, trending, etc.
+        const searches = analytics.searches || {};
+        const viewed = analytics.viewed || {};
+        const favoritesA = analytics.favorites || {};
+        const mostSearched = Object.keys(searches).sort((a, b) => searches[b] - searches[a])[0];
+        const trending = Object.keys(viewed).sort((a, b) => viewed[b] - viewed[a])[0];
+        setAnalytics(a => ({...a, mostSearched, trending, viewedCount: Object.keys(viewed).length, favoritesCount: Object.keys(favoritesA).length }));
+        setShowAnalytics(true);
+      }
+
+      // --- Helper: Export/Print ---
+      function showExportModal() {
+        setExportTerms(filteredTerms.slice(0, 20));
+        setShowExport(true);
+      }
+
+      // --- Helper: Quiz ---
+      function showQuizModal() {
+        setShowQuiz(true);
+      }
+
       return (
-        <div>
-          <header className="mb-6 text-center">
-            <h1 className="text-4xl font-bold text-gray-800 mb-1">📘 CorpSpeak Pro</h1>
-            <p className="text-gray-600">Digital dictionary for modern corporate consulting</p>
-          </header>
-
-          <div className="mb-6">
-            <input
-              type="text"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="Search terms like 'rukki', 'bizdev', or 'architecture'..."
-              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400"
+        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col">
+          <Header
+            query={query}
+            setQuery={setQuery}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            onDaily={showDailyTerm}
+            onExport={showExportModal}
+            onQuiz={showQuizModal}
+            onShowAnalytics={showAnalyticsModal}
+          />
+          <main className="flex-1 flex flex-col md:flex-row gap-6 mt-6">
+            <Sidebar
+              categories={categories}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              azJump={azJump}
+              setAzJump={setAzJump}
             />
-          </div>
-
-          {filteredTerms.length > 0 ? (
-            filteredTerms.map((term, i) => <GlossaryCard key={i} term={term} />)
-          ) : (
-            <p className="text-center text-gray-500 mt-10">No terms found. Try another keyword.</p>
+            <section className="flex-1">
+              {loading ? (
+                <p className="text-center text-gray-500 mt-10">Loading terms...</p>
+              ) : error ? (
+                <p className="text-center text-red-500 mt-10">{error}</p>
+              ) : filteredTerms.length > 0 ? (
+                filteredTerms.map((term, i) => (
+                  <GlossaryCard
+                    key={i}
+                    term={term}
+                    onCopy={() => copyTerm(term)}
+                  />
+                ))
+              ) : (
+                <p className="text-center text-gray-500 mt-10">No terms found. Try another keyword.</p>
+              )}
+            </section>
+          </main>
+          {/* Modals */}
+          {showExport && (
+            <ExportModal terms={exportTerms} onClose={() => setShowExport(false)} />
+          )}
+          {showQuiz && (
+            <QuizModal terms={glossary} onClose={() => setShowQuiz(false)} />
+          )}
+          {showAnalytics && (
+            <AnalyticsModal analytics={analytics} onClose={() => setShowAnalytics(false)} />
+          )}
+          {/* Daily Term Modal */}
+          {dailyTerm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+              <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 max-w-lg w-full relative">
+                <button className="absolute top-2 right-2 text-2xl" onClick={() => setDailyTerm(null)}>&times;</button>
+                <h2 className="text-2xl font-bold mb-4 text-blue-800 dark:text-blue-200">Term of the Day</h2>
+                <GlossaryCard term={dailyTerm} onCopy={() => copyTerm(dailyTerm)} />
+              </div>
+            </div>
           )}
         </div>
       );
