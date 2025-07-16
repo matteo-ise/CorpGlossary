@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CorpSpeak Pro - Enterprise Consulting Glossary</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div id="root" class="max-w-6xl mx-auto p-6"></div>
+
+  <script type="text/babel">
+
+    const glossary = [
+      {
+        original: "Architecture",
+        modified: "Architec",
+        pronunciation: "/ˈɑːr.kɪ.tek/",
+        category: "Technology",
+        definition: "The fundamental organizational structure of systems, processes, or enterprises.",
+        etymology: "Classical truncation maintaining technical authority.",
+        usageContext: ["IT strategy", "System design"],
+        examples: ["Our cloud architec enables unprecedented scalability."],
+        relatedTerms: ["Structuri", "Framewor", "Designi"],
+        difficultyLevel: "Intermediate",
+        industry: ["Tech", "Consulting"],
+        tags: ["IT", "Infrastructure"]
+      },
+      {
+        original: "Business Development Option",
+        modified: "BizDevOpsi",
+        pronunciation: "/ˈbɪz.dɛv.ɑːp.si/",
+        category: "Strategic Consulting",
+        definition: "Contingent growth initiative often evaluated for expansion feasibility.",
+        etymology: "Hybrid abbreviation aligning with growth operations.",
+        usageContext: ["Growth planning", "M&A"],
+        examples: ["Let's align the proposal with our core bizdevopsi thesis."],
+        relatedTerms: ["Scalevent", "MarketiStrat"],
+        difficultyLevel: "Advanced",
+        industry: ["Finance", "Consulting"],
+        tags: ["BDO", "Growth", "Strategy"]
+      },
+      {
+        original: "Rucksack",
+        modified: "Rukki",
+        pronunciation: "/ˈrʌk.i/",
+        category: "Agile/Methodology",
+        definition: "All carried initiatives, tasks, and pending items in project flow.",
+        etymology: "Consulting metaphor for 'carrying work on your back'.",
+        usageContext: ["Sprint planning", "Delivery tracking"],
+        examples: ["What's in your rukki for this quarter?"],
+        relatedTerms: ["Backloggi", "Taskloadi"],
+        difficultyLevel: "Basic",
+        industry: ["Tech", "Agile"],
+        tags: ["Scrum", "Planning"]
+      },
+      {
+        original: "Benchmark",
+        modified: "Benchma",
+        pronunciation: "/ˈbentʃ.mɑː/",
+        category: "Strategy",
+        definition: "Standard reference point for measuring comparative performance.",
+        etymology: "Compressed compound with performance authority.",
+        usageContext: ["KPI setting", "Performance reviews"],
+        examples: ["We need to benchma against industry leaders quarterly."],
+        relatedTerms: ["Compari", "Standardi"],
+        difficultyLevel: "Intermediate",
+        industry: ["All"],
+        tags: ["Metrics", "Performance"]
+      },
+      {
+        original: "Bandwidth",
+        modified: "Bandwi",
+        pronunciation: "/ˈbænd.wi/",
+        category: "Operations",
+        definition: "Available capacity for additional tasks or mental load.",
+        etymology: "Derived from tech term, simplified.",
+        usageContext: ["Workload discussions"],
+        examples: ["Do you have bandwi for this initiative?"],
+        relatedTerms: ["Capaci", "Availabi"],
+        difficultyLevel: "Basic",
+        industry: ["Tech", "Consulting"],
+        tags: ["Resources", "Planning"]
+      }
+    ];
+
+    function GlossaryCard({ term }) {
+      const [expanded, setExpanded] = React.useState(false);
+      return (
+        <div className="bg-white rounded-xl shadow p-4 mb-4">
+          <div className="flex justify-between items-center cursor-pointer" onClick={() => setExpanded(!expanded)}>
+            <h2 className="text-xl font-semibold text-blue-700">{term.modified}</h2>
+            <span className="text-sm text-gray-500">{term.original}</span>
+          </div>
+          {expanded && (
+            <div className="mt-3 space-y-1 text-sm">
+              <p><strong>Pronunciation:</strong> {term.pronunciation}</p>
+              <p><strong>Definition:</strong> {term.definition}</p>
+              <p><strong>Etymology:</strong> {term.etymology}</p>
+              <p><strong>Category:</strong> {term.category} | <strong>Level:</strong> {term.difficultyLevel}</p>
+              <p><strong>Usage:</strong> {term.usageContext.join(', ')}</p>
+              <p><strong>Example:</strong> <em>"{term.examples[0]}"</em></p>
+              <p><strong>Related:</strong> {term.relatedTerms.map(rt => <span key={rt} className="inline-block mr-1 bg-gray-200 px-2 py-0.5 rounded">{rt}</span>)}</p>
+              <p><strong>Tags:</strong> {term.tags.join(', ')}</p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function App() {
+      const [query, setQuery] = React.useState("");
+
+      const filteredTerms = React.useMemo(() => {
+        return glossary.filter(t =>
+          t.original.toLowerCase().includes(query.toLowerCase()) ||
+          t.modified.toLowerCase().includes(query.toLowerCase()) ||
+          t.definition.toLowerCase().includes(query.toLowerCase())
+        );
+      }, [query]);
+
+      return (
+        <div>
+          <header className="mb-6 text-center">
+            <h1 className="text-4xl font-bold text-gray-800 mb-1">📘 CorpSpeak Pro</h1>
+            <p className="text-gray-600">Digital dictionary for modern corporate consulting</p>
+          </header>
+
+          <div className="mb-6">
+            <input
+              type="text"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search terms like 'rukki', 'bizdev', or 'architecture'..."
+              className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
+
+          {filteredTerms.length > 0 ? (
+            filteredTerms.map((term, i) => <GlossaryCard key={i} term={term} />)
+          ) : (
+            <p className="text-center text-gray-500 mt-10">No terms found. Try another keyword.</p>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
